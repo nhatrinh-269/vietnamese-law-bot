@@ -1,0 +1,40 @@
+networks:
+  lh-network:
+    driver: bridge
+
+volumes:
+  lh-neo4j-data:
+    driver: local
+
+services:
+  lh-neo4j:
+    image: neo4j:latest
+    container_name: lh-neo4j
+    restart: unless-stopped
+    ports:
+      - 7474:7474
+      - 7687:7687
+    networks:
+      - lh-network
+    volumes:
+      - lh-neo4j-data:/data
+    environment:
+      - NEO4J_AUTH=none
+
+  lh-api:
+    build: 
+      context: .
+      dockerfile: ./src/Dockerfile
+    image: lh-api
+    container_name: lh-api
+    restart: unless-stopped
+    ports:
+      - 8001:8001
+    networks:
+      - lh-network
+    depends_on:
+      - lh-neo4j
+    env_file:
+      - .env
+    environment:
+      - NEO4J_HOST=lh-neo4j
