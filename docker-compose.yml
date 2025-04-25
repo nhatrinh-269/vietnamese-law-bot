@@ -21,10 +21,28 @@ services:
     environment:
       - NEO4J_AUTH=none
 
+  # lh-api:
+  #   build: 
+  #     context: .
+  #     dockerfile: ./src/Dockerfile
+  #   image: lh-api
+  #   container_name: lh-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8001:8001
+  #   networks:
+  #     - lh-network
+  #   depends_on:
+  #     - lh-neo4j
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - NEO4J_HOST=lh-neo4j
+
   lh-api:
     build: 
       context: .
-      dockerfile: ./src/Dockerfile
+      dockerfile: ./src_nhien/Dockerfile
     image: lh-api
     container_name: lh-api
     restart: unless-stopped

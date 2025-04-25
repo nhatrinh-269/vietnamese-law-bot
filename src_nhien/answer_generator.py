@@ -1,20 +1,28 @@
-from src_nhien.LLM_gemini import LLM_gemini
+from LLM_gemini import LLM_gemini
 
-def generate_answer(question,  results_ds = "", results_hs = ""):
+
+def generate_answer(
+    question: str,
+    histories: str = "",
+    results_ds="",
+    results_hs=""
+):
     """
     This function generates an answer based on the question and query results using the Gemini LLM.
-    
+
     Args:
         question (str): The question to be answered.
         results_ds (list): The query results from the civil law database.
         results_hs (list): The query results from the criminal law database.
-        
+
     Returns:
         str: The generated answer.
     """
     if not results_ds.strip() and not results_hs.strip():
         # Trả lời linh hoạt bằng LLM như một trợ lý thông thường
         general_prompt = f"""
+        Lịch sử câu hỏi: {histories}
+        ---
         Câu hỏi: "{question}"
         Hãy trả lời một cách tự nhiên, thân thiện, ngắn gọn và hữu ích như một trợ lý AI thông minh. 
         Nếu câu hỏi liên quan đến đời sống, kiến thức chung, hãy giải thích dễ hiểu. 
@@ -24,7 +32,10 @@ def generate_answer(question,  results_ds = "", results_hs = ""):
         return response
     # Prepare the prompt for the LLM
     prompt = """
-        Bạn là một luật sư chuyên về Bộ luật Dân sự và bộ luật hình sự Việt Nam. Hãy trả lời câu hỏi của khách hàng dựa trên các điều luật liên quan được truy vấn từ Neo4j.  
+        Bạn là một luật sư chuyên về Bộ luật Dân sự và bộ luật hình sự Việt Nam. Hãy trả lời câu hỏi của khách hàng dựa trên các điều luật liên quan được truy vấn từ Neo4j.
+          
+        Lịch sử câu hỏi: {histories}
+        ---
 
         **Dữ liệu đầu vào từ truy vấn đồ thị (Graph Query)**  
         - **Câu hỏi của khách hàng:** "{user_question}"  
@@ -50,7 +61,8 @@ def generate_answer(question,  results_ds = "", results_hs = ""):
         **Chỉ trả lời dựa trên dữ liệu truy vấn, không bịa đặt thông tin ngoài.**  
     """
     # Replace placeholders in the prompt with actual values
-    user_question = prompt.replace("question",question ).replace("results_ds", results_ds).replace("results_hs", results_hs)
+    user_question = prompt.replace("question", question).replace(
+        "results_ds", results_ds).replace("results_hs", results_hs)
     # Call the LLM with the prepared prompt
     answer = LLM_gemini(user_question)
     return answer

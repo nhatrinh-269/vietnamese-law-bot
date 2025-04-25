@@ -1,43 +1,52 @@
-import sys
-import os
-import uvicorn
+import json
+import time
+from enum import Enum
 from fastapi import FastAPI
 from pydantic import BaseModel
-from threading import Thread
-import gradio as gr
-import json
-from dotenv import load_dotenv
+from llama_index.core.llms import MessageRole
+from extract_data_from_graph import extract_data_from_graph
+from answer_generator import generate_answer
+from query_generator import generate_cypher_query_from_keywords, extract_keywords_with_llm
+from database import LawGraphQuery
+from config import URI
 
-# Add the project directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src_nhien.config import GENAI_API_KEY, URI, NEO4J_USER, PASSWORD
-from src_nhien.database import LawGraphQuery
-from src_nhien.query_generator import generate_cypher_query_from_keywords, extract_keywords_with_llm
-from src_nhien.answer_generator import generate_answer
-from src_nhien.extract_data_from_graph import extract_data_from_graph
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(
+    docs_url="/"
+)
+
+graph_query = LawGraphQuery(URI)
+
+
+class PlanType(str, Enum):
+    FREE = "free"
+    PRO = "pro"
+    PREMIUM = "premium"
+
+
+class ChatHistoryItem(BaseModel):
+    role: MessageRole
+    content: str
+
 
 # Define the request model for FastAPI
-class QuestionRequest(BaseModel):
+class ChatRequest(BaseModel):
     question: str
+    histories: list[ChatHistoryItem] = []
+    plan_type: PlanType = PlanType.FREE
+
 
 # Function to process a question
-def process_question(question):
+async def process_question(
+    question: str,
+    histories: list[ChatHistoryItem] = [],
+    plan_type: PlanType = PlanType.FREE
+):
     """
     Function to process a question and return an answer.
     """
-    # Check if the required environment variables are set
-    if not GENAI_API_KEY or not URI or not NEO4J_USER or not PASSWORD:
-        return "Error: Environment variables not set."
-
     # Initialize the graph database connection
-    graph_query = LawGraphQuery(URI, NEO4J_USER, PASSWORD)
     if not graph_query.test_connection():
         return "Error: Unable to connect to the database."
 
@@ -48,47 +57,48 @@ def process_question(question):
     dan_su_query, hinh_su_query = generate_cypher_query_from_keywords(keywords)
 
     # Extract data from the graph database using the generated query
-    results_ds, results_hs = extract_data_from_graph(dan_su_query, hinh_su_query)
+    results_ds, results_hs = extract_data_from_graph(
+        dan_su_query, hinh_su_query)
+
+    # Format histories as string
+    histories_str = "\n".join(
+        [f"{item.role}: {item.content}" for item in histories])
 
     # Generate an answer based on the question and query results
-    answer = generate_answer(question, results_ds = str(results_ds), results_hs = str(results_hs))
+    answer = generate_answer(
+        question,
+        histories_str,
+        results_ds=str(results_ds),
+        results_hs=str(results_hs)
+    )
 
     return answer
 
-# FastAPI endpoint
-@app.post("/process_question/")
-async def process_question_endpoint(request: QuestionRequest):
+
+@app.post("/chat")
+async def process_question_endpoint(data: ChatRequest):
     """
     Endpoint to process a question and return an answer.
     """
-    answer = process_question(request.question)
-    return {"question": request.question, "answer": answer}
+    _start_time = time.perf_counter()
+    _response = await process_question(
+        question=data.question,
+        histories=data.histories,
+        plan_type=data.plan_type
+    )
 
-# Define a function for Gradio UI
-def ask_question_gradio(question):
-    """
-    Function to process a question and return an answer for Gradio UI.
-    """
-    return process_question(question)
+    return {
+        "response": _response,
+        "error": None,
+        "time": time.perf_counter() - _start_time
+    }
 
-# Create Gradio interface
-gr_interface = gr.Interface(
-    fn=ask_question_gradio,  # Function to process the question
-    inputs="text",           # Input type: text box
-    outputs="text",          # Output type: text box
-    title="LawHelper",       # Title of the UI
-    description="Hãy cho tôi biết bạn cần giúp đỡ gì về pháp lý. Tôi sẽ giúp bạn!"  # Description
-)
 
-if __name__ == "__main__":
-    # Start FastAPI server
-    def run_fastapi():
-        uvicorn.run(app, host="0.0.0.0", port=8000)
-
-    # Start Gradio interface
-    def run_gradio():
-        gr_interface.launch(server_name="0.0.0.0", server_port=7860, share=True)
-
-    # Run both servers in parallel
-    Thread(target=run_fastapi).start()
-    Thread(target=run_gradio).start()
+@app.exception_handler(Exception)
+async def exception_handler(_, exc):
+    """Global exception handler."""
+    return {
+        "response": None,
+        "error": str(exc),
+        "time": 0
+    }

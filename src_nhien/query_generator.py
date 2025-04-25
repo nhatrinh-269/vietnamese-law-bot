@@ -1,4 +1,4 @@
-from src_nhien.LLM_gemini import LLM_gemini
+from LLM_gemini import LLM_gemini
 
 
 # Hàm sử dụng LLM để trích xuất từ khóa
@@ -42,12 +42,13 @@ def extract_keywords_with_llm(question):
         {}
     """
     # Thay thế {question} bằng câu hỏi thực tế
-    prompt = prompt.replace("question",question)
+    prompt = prompt.replace("question", question)
     # Gọi LLM để lấy phản hồi
     response = LLM_gemini(prompt)
     # Làm sạch đầu ra để loại bỏ các ký tự không mong muốn
     cleaned_output = response.replace("```json", "").replace("```", "").strip()
     return cleaned_output
+
 
 def generate_cypher_query_from_keywords(keywords):
     """
