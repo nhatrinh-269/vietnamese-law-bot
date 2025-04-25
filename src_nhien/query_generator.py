@@ -1,4 +1,4 @@
-from src.LLM_gemini import LLM_gemini
+from src_nhien.LLM_gemini import LLM_gemini
 
 
 # Hàm sử dụng LLM để trích xuất từ khóa
@@ -33,6 +33,13 @@ def extract_keywords_with_llm(question):
         }
         
     Không được bao quanh bằng dấu ``` hoặc bất kỳ ký hiệu markdown nào. Không thêm giải thích, mô tả hoặc ghi chú..
+    Nếu câu hỏi không liên quan đến luật pháp:
+        Trả lời bình thường, không thực hiện trích xuất từ khóa.
+        
+        Ví dụ, nếu câu hỏi là "Trái đất quay quanh mặt trời như thế nào?"  không cần phân loại từ khóa và trả về json rỗng và không trả lời gì thêm.
+        rả về JSON rỗng như sau:
+        ##Output example:
+        {}
     """
     # Thay thế {question} bằng câu hỏi thực tế
     prompt = prompt.replace("question",question)
@@ -56,7 +63,8 @@ def generate_cypher_query_from_keywords(keywords):
     civil_query = f"""
     MATCH (r:Root {{title: 'Luat Viet nam'}})-[:HAS_LAW]->(l:Law {{key: 'luat dan su'}})-[:HAS_CHAPTER]->(c:Chapter)-[:HAS_DIEU]->(d:Dieu)
     WHERE {civil_conditions}
-    RETURN d.dieu_number, d.title, d.content
+    OPTIONAL MATCH (d)-[:REFERS_TO]->(ref:Dieu)
+    RETURN d.dieu_number, d.title, d.content, collect(ref.dieu_number) AS referenced_articles
     """ if civil_conditions else ""
 
     # Tạo điều kiện WHERE cho Bộ luật Hình sự
@@ -66,7 +74,8 @@ def generate_cypher_query_from_keywords(keywords):
     criminal_query = f"""
     MATCH (r:Root {{title: 'Luat Viet nam'}})-[:HAS_LAW]->(l:Law {{key: 'luat hinh su'}})-[:HAS_CHAPTER]->(c:Chapter)-[:HAS_DIEU]->(d:Dieu)
     WHERE {criminal_conditions}
-    RETURN d.dieu_number, d.title, d.content 
+    OPTIONAL MATCH (d)-[:REFERS_TO]->(ref:Dieu)
+    RETURN d.dieu_number, d.title, d.content, collect(ref.dieu_number) AS referenced_articles
     """ if criminal_conditions else ""
 
     # Kết hợp các truy vấn bằng UNION

@@ -5,7 +5,7 @@ class LawGraphQuery:
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
     
     def query(self, query):
-        with self.driver.session(database="database2") as session:
+        with self.driver.session(database="viphamhanhchinh") as session:
             result = session.run(query)
             return [record for record in result]
         
@@ -17,7 +17,7 @@ class LawGraphQuery:
         Test the connection to the Neo4j database.
         """
         try:
-            with self.driver.session(database="database2") as session:
+            with self.driver.session(database="viphamhanhchinh") as session:
                 session.run("RETURN 1")
             print("Database connection successful!")
             return True

@@ -1,5 +1,5 @@
 import google.generativeai as genai
-from src.config import GENAI_API_KEY
+from src_nhien.config import GENAI_API_KEY
 
 def LLM_gemini(prompt):
     """

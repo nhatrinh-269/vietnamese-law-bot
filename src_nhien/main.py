@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 # Add the project directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import GENAI_API_KEY, URI, NEO4J_USER, PASSWORD
-from src.database import LawGraphQuery
-from src.query_generator import generate_cypher_query_from_keywords, extract_keywords_with_llm
-from src.answer_generator import generate_answer
-from src.extract_data_from_graph import extract_data_from_graph
+from src_nhien.config import GENAI_API_KEY, URI, NEO4J_USER, PASSWORD
+from src_nhien.database import LawGraphQuery
+from src_nhien.query_generator import generate_cypher_query_from_keywords, extract_keywords_with_llm
+from src_nhien.answer_generator import generate_answer
+from src_nhien.extract_data_from_graph import extract_data_from_graph
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,7 +51,7 @@ def process_question(question):
     results_ds, results_hs = extract_data_from_graph(dan_su_query, hinh_su_query)
 
     # Generate an answer based on the question and query results
-    answer = generate_answer(question, str(results_ds), str(results_hs))
+    answer = generate_answer(question, results_ds = str(results_ds), results_hs = str(results_hs))
 
     return answer
 

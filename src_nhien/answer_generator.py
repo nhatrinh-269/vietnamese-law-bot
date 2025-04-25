@@ -1,6 +1,6 @@
-from src.LLM_gemini import LLM_gemini
+from src_nhien.LLM_gemini import LLM_gemini
 
-def generate_answer(question, results_ds, results_hs):
+def generate_answer(question,  results_ds = "", results_hs = ""):
     """
     This function generates an answer based on the question and query results using the Gemini LLM.
     
@@ -12,6 +12,16 @@ def generate_answer(question, results_ds, results_hs):
     Returns:
         str: The generated answer.
     """
+    if not results_ds.strip() and not results_hs.strip():
+        # Trả lời linh hoạt bằng LLM như một trợ lý thông thường
+        general_prompt = f"""
+        Câu hỏi: "{question}"
+        Hãy trả lời một cách tự nhiên, thân thiện, ngắn gọn và hữu ích như một trợ lý AI thông minh. 
+        Nếu câu hỏi liên quan đến đời sống, kiến thức chung, hãy giải thích dễ hiểu. 
+        Tránh dùng từ ngữ pháp lý, không giả định dữ liệu pháp luật.
+        """
+        response = LLM_gemini(general_prompt)
+        return response
     # Prepare the prompt for the LLM
     prompt = """
         Bạn là một luật sư chuyên về Bộ luật Dân sự và bộ luật hình sự Việt Nam. Hãy trả lời câu hỏi của khách hàng dựa trên các điều luật liên quan được truy vấn từ Neo4j.  
