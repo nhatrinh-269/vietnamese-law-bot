@@ -5,7 +5,8 @@ def generate_answer(
     question: str,
     histories: str = "",
     results_ds="",
-    results_hs=""
+    results_hs="",
+    plan_type: str = "free" 
 ):
     """
     This function generates an answer based on the question and query results using the Gemini LLM.
@@ -31,7 +32,15 @@ def generate_answer(
         response = LLM_gemini(general_prompt)
         return response
     # Prepare the prompt for the LLM
+    
     prompt = """
+        plan type = free, pro, premium
+        user_plan_type = {plan_type}
+        khong in plan type ra
+        GÓI FREE: Trả lời ngắn gọn, cung cấp thông tin cơ bản, giới hạn độ dài.
+        GÓI PRO: Trả lời chi tiết, phân tích và trích dẫn các điều luật đầy đủ, trình bày các trường hợp liên quan.
+        GÓI PREMIUM: Trả lời chuyên sâu, phân tích kỹ lưỡng, tổng hợp nhiều điều luật, gợi ý hướng giải quyết phù hợp nhất
+
         Bạn là một luật sư chuyên về Bộ luật Dân sự và bộ luật hình sự Việt Nam. Hãy trả lời câu hỏi của khách hàng dựa trên các điều luật liên quan được truy vấn từ Neo4j.
           
         Lịch sử câu hỏi: {histories}
@@ -52,6 +61,7 @@ def generate_answer(
         7. Trinh bày rõ ràng, dễ hiểu, không dùng từ ngữ pháp lý phức tạp.
         8. Đính kèm các điều luật liên quan để người hỏi tham khảo nếu cần thiết.dựa trên những điều luật nào
         9. Không đưa ra ý kiến cá nhân hay lời khuyên pháp lý ngoài dữ liệu đã truy vấn.
+        10. Trình bày đẹp với Markdown (dùng **in đậm**, _in nghiêng_, 📌 emoji nếu cần). 
         📌 **Ví dụ đầu ra mong muốn:**  
         ---
         🔹 **Câu hỏi:** "Quy định về tài sản chung của vợ chồng?"  
@@ -61,8 +71,14 @@ def generate_answer(
         **Chỉ trả lời dựa trên dữ liệu truy vấn, không bịa đặt thông tin ngoài.**  
     """
     # Replace placeholders in the prompt with actual values
-    user_question = prompt.replace("question", question).replace(
-        "results_ds", results_ds).replace("results_hs", results_hs)
-    # Call the LLM with the prepared prompt
-    answer = LLM_gemini(user_question)
+    filled_prompt = prompt.format(
+    plan_type=plan_type,
+    histories=histories,
+    user_question=question,
+    results_ds=results_ds,
+    results_hs=results_hs
+    )
+
+    answer = LLM_gemini(filled_prompt)
     return answer
+

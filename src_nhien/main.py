@@ -69,7 +69,8 @@ async def process_question(
         question,
         histories_str,
         results_ds=str(results_ds),
-        results_hs=str(results_hs)
+        results_hs=str(results_hs),
+        plan_type=str(plan_type.value)
     )
 
     return answer

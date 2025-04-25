@@ -19,7 +19,7 @@ class LawGraphImporter:
         root = self.data.get("Luat", {})
         root_title = root.get("title", "Luật Việt Nam")
 
-        with self.driver.session(database='viphamhanhchinh') as ses:
+        with self.driver.session() as ses:
             ses.execute_write(self.create_root, root_title)
 
             for law_key, law_data in (root.get("content") or {}).items():
@@ -211,10 +211,10 @@ class LawGraphImporter:
 
 
 if __name__ == "__main__":
-    uri = "bolt://75.101.186.147:7687"
+    uri = "bolt://localhost:7687"
     # user = "neo4j"
     # password = "factories-class-researcher"
-    json_file = "/home/nhienhoang/FPT_work/law/dataset/chung (1).json"
+    json_file = "/home/student/nhienht-DE170295/legalhelper-project/vietnamese-law-bot/data/chung.json"
 
     imp = LawGraphImporter(uri, json_file)
     imp.import_data()
