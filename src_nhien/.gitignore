@@ -1,0 +1,5 @@
+# Bỏ qua file config.py chứa key
+src/config.py
+
+# Bỏ qua file .env chứa biến môi trường
+.env
